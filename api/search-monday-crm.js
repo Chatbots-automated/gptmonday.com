@@ -31,9 +31,9 @@ export default async function handler(req, res) {
 
     let allResults = [];
 
-    // Step 2: Search each board manually
+    // Step 2: Search each board properly using items_page
     for (const board of boards) {
-      const itemsResponse = await fetch('https://api.monday.com/v2', {
+      const searchResponse = await fetch('https://api.monday.com/v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,13 +43,16 @@ export default async function handler(req, res) {
           query: `
             query {
               boards(ids: ${board.id}) {
-                items {
-                  id
-                  name
-                  column_values {
+                items_page(query_params: {
+                  rules: [{
+                    column_id: "name",
+                    compare_value: ["${query}"],
+                    operator: contains_text
+                  }]
+                }) {
+                  items {
                     id
-                    title
-                    text
+                    name
                   }
                 }
               }
@@ -58,18 +61,11 @@ export default async function handler(req, res) {
         })
       });
 
-      const itemsData = await itemsResponse.json();
-      const items = itemsData.data.boards[0]?.items || [];
+      const searchData = await searchResponse.json();
+      const items = searchData.data.boards[0]?.items_page?.items || [];
 
-      // Search in item name and all columns
-      const matchingItems = items.filter(item => {
-        const nameMatch = item.name && item.name.toLowerCase().includes(query.toLowerCase());
-        const columnMatch = item.column_values.some(col => col.text && col.text.toLowerCase().includes(query.toLowerCase()));
-        return nameMatch || columnMatch;
-      });
-
-      if (matchingItems.length > 0) {
-        allResults.push(...matchingItems);
+      if (items.length > 0) {
+        allResults.push(...items);
       }
     }
 
