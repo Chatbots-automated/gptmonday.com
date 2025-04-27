@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     // Handle CORS preflight
     res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*'); // Or set your domain instead of '*'
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Or set your domain
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     return res.status(200).end();
@@ -67,9 +67,11 @@ export default async function handler(req, res) {
           query: `
             query {
               boards(ids: ${board.id}) {
-                items {
-                  id
-                  name
+                items_page(limit: 100) {
+                  items {
+                    id
+                    name
+                  }
                 }
               }
             }
@@ -80,10 +82,10 @@ export default async function handler(req, res) {
       const itemsData = await itemsResponse.json();
       console.log(`Items on board ${board.name}:`, JSON.stringify(itemsData, null, 2));
 
-      const items = itemsData.data?.boards[0]?.items || [];
+      const items = itemsData.data?.boards[0]?.items_page?.items || [];
 
       const matchingItems = items.filter(item =>
-        item.name.toLowerCase().includes(query.toLowerCase())
+        item.name?.toLowerCase().includes(query.toLowerCase())
       );
 
       console.log(`Found ${matchingItems.length} matching items on board ${board.name}`);
