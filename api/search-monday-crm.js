@@ -31,8 +31,27 @@ export default async function handler(req, res) {
 
     let allResults = [];
 
-    // Step 2: Search each board properly using items_page
+    // Step 2: Search each board properly using variables
     for (const board of boards) {
+      const searchQuery = `
+        query SearchItems($boardId: [ID!], $searchText: [String!]) {
+          boards(ids: $boardId) {
+            items_page(query_params: {
+              rules: [{
+                column_id: "name",
+                compare_value: $searchText,
+                operator: contains_text
+              }]
+            }) {
+              items {
+                id
+                name
+              }
+            }
+          }
+        }
+      `;
+
       const searchResponse = await fetch('https://api.monday.com/v2', {
         method: 'POST',
         headers: {
@@ -40,24 +59,11 @@ export default async function handler(req, res) {
           'Authorization': apiKey
         },
         body: JSON.stringify({
-          query: `
-            query {
-              boards(ids: ${board.id}) {
-                items_page(query_params: {
-                  rules: [{
-                    column_id: "name",
-                    compare_value: ["${query}"],
-                    operator: contains_text
-                  }]
-                }) {
-                  items {
-                    id
-                    name
-                  }
-                }
-              }
-            }
-          `
+          query: searchQuery,
+          variables: {
+            boardId: board.id,
+            searchText: [query]
+          }
         })
       });
 
