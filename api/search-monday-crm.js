@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const { query } = req.body;
-  const apiKey = 'your_api_key_here'; // replace with your real key
+  const apiKey = 'your_api_key_here'; // Replace
 
   console.log('Received search query:', query);
 
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
           query: `
             query {
               boards(ids: ${board.id}) {
-                items_page(limit: 100) {
+                items_page(limit: 500) {
                   items {
                     id
                     name
@@ -86,11 +86,11 @@ export default async function handler(req, res) {
 
       const matchingItems = items.filter(item => {
         const nameMatch = item.name?.toLowerCase().includes(query.toLowerCase());
-        const columnMatch = item.column_values?.some(col => {
-          return col.text && col.text.toLowerCase().includes(query.toLowerCase());
-        });
+        const columnMatch = item.column_values?.some(col => col.text && col.text.toLowerCase().includes(query.toLowerCase()));
         return nameMatch || columnMatch;
       });
+
+      console.log(`Found ${matchingItems.length} matching items on board ${board.name}`);
 
       if (matchingItems.length > 0) {
         allResults.push(...matchingItems);
