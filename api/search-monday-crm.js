@@ -4,7 +4,12 @@ export default async function handler(req, res) {
   }
 
   const { query } = req.body;
-  const apiKey = process.env.MONDAY_API_KEY;
+
+  // 👉 Hardcoded API key for testing
+  const apiKey = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NzU2NzQxNywiYWFpIjoxMSwidWlkIjo3MDc0NTI3MSwiaWFkIjoiMjAyNS0wMS0xNFQxMDoyOTo0OS4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTc3Njk4NCwicmduIjoidXNlMSJ9.BEj_fvCfaotmbuiYw42tbu1-gBfeLX9uKlYRHPgSaWI';
+
+  // Properly escape dangerous characters in GraphQL
+  const safeQuery = query.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
   try {
     // Step 1: Get all boards
