@@ -31,9 +31,9 @@ export default async function handler(req, res) {
 
     let allResults = [];
 
-    // Step 2: Search each board
+    // Step 2: Search each board manually
     for (const board of boards) {
-      const searchResponse = await fetch('https://api.monday.com/v2', {
+      const itemsResponse = await fetch('https://api.monday.com/v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,15 +42,15 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           query: `
             query {
-              items_by_column_values(
-                board_id: ${board.id},
-                column_id: "name",
-                column_value: "${query}"
-              ) {
-                id
-                name
-                board {
+              boards(ids: ${board.id}) {
+                items {
+                  id
                   name
+                  column_values {
+                    id
+                    title
+                    text
+                  }
                 }
               }
             }
@@ -58,9 +58,18 @@ export default async function handler(req, res) {
         })
       });
 
-      const searchData = await searchResponse.json();
-      if (searchData.data && searchData.data.items_by_column_values.length > 0) {
-        allResults.push(...searchData.data.items_by_column_values);
+      const itemsData = await itemsResponse.json();
+      const items = itemsData.data.boards[0]?.items || [];
+
+      // Search in item name and all columns
+      const matchingItems = items.filter(item => {
+        const nameMatch = item.name && item.name.toLowerCase().includes(query.toLowerCase());
+        const columnMatch = item.column_values.some(col => col.text && col.text.toLowerCase().includes(query.toLowerCase()));
+        return nameMatch || columnMatch;
+      });
+
+      if (matchingItems.length > 0) {
+        allResults.push(...matchingItems);
       }
     }
 
