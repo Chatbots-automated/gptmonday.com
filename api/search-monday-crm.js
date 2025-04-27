@@ -32,9 +32,8 @@ export default async function handler(req, res) {
       1645017543, // B2C
       8921495991, // Sales Pipeline BESS
       8720615243, // Sandelis
-      183214238, // single project
-      2177969450 //B2B
-      // 🔥 Add more board IDs here!
+      183214238,  // Single project
+      2177969450  // B2B
     ];
 
     let allResults = [];
@@ -84,7 +83,13 @@ export default async function handler(req, res) {
 
       console.log(`Found ${matchingItems.length} matches in board ${boardId}`);
 
-      allResults.push(...matchingItems);
+      // ✅ Only push { id, name } like GPT expects
+      allResults.push(
+        ...matchingItems.map(item => ({
+          id: item.id,
+          name: item.name
+        }))
+      );
     }
 
     console.log(`Total matches found: ${allResults.length}`);
