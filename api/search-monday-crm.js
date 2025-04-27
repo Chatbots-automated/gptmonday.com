@@ -83,7 +83,6 @@ export default async function handler(req, res) {
 
       console.log(`Found ${matchingItems.length} matches in board ${boardId}`);
 
-      // ✅ Only push { id, name } like GPT expects
       allResults.push(
         ...matchingItems.map(item => ({
           id: item.id,
@@ -96,6 +95,6 @@ export default async function handler(req, res) {
     res.status(200).json({ results: allResults });
   } catch (err) {
     console.error('Error:', err);
-    res.status(500).json({ error: 'Failed to search Monday.com boards' });
+    res.status(200).json({ results: [] }); // <<< IMPORTANT for GPT
   }
 }
