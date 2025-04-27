@@ -1,46 +1,72 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Use POST' });
+    return res.status(405).json({ error: 'Use POST method' });
   }
 
   const { query } = req.body;
-
   const apiKey = process.env.MONDAY_API_KEY;
 
-  const graphqlQuery = {
-    query: `
-      query {
-        items_by_column_values(
-          board_id: YOUR_BOARD_ID,
-          column_id: "name",
-          column_value: "${query}"
-        ) {
-          id
-          name
-          column_values {
-            title
-            text
-          }
-        }
-      }
-    `
-  };
-
   try {
-    const response = await fetch('https://api.monday.com/v2', {
+    // Step 1: Get all boards
+    const boardsResponse = await fetch('https://api.monday.com/v2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': apiKey
       },
-      body: JSON.stringify(graphqlQuery)
+      body: JSON.stringify({
+        query: `
+          query {
+            boards {
+              id
+              name
+            }
+          }
+        `
+      })
     });
 
-    const data = await response.json();
+    const boardsData = await boardsResponse.json();
+    const boards = boardsData.data.boards;
 
-    res.status(200).json({ results: data.data.items_by_column_values });
+    let allResults = [];
+
+    // Step 2: Search each board
+    for (const board of boards) {
+      const searchResponse = await fetch('https://api.monday.com/v2', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': apiKey
+        },
+        body: JSON.stringify({
+          query: `
+            query {
+              items_by_column_values(
+                board_id: ${board.id},
+                column_id: "name",
+                column_value: "${query}"
+              ) {
+                id
+                name
+                board {
+                  name
+                }
+              }
+            }
+          `
+        })
+      });
+
+      const searchData = await searchResponse.json();
+      if (searchData.data.items_by_column_values.length > 0) {
+        allResults.push(...searchData.data.items_by_column_values);
+      }
+    }
+
+    res.status(200).json({ results: allResults });
   } catch (err) {
     console.error('Error:', err);
-    res.status(500).json({ error: 'Failed to fetch from Monday.com' });
+    res.status(500).json({ error: 'Failed to search Monday.com boards' });
   }
 }
