@@ -29,9 +29,11 @@ export default async function handler(req, res) {
 
   try {
     const boardIds = [
-      1645017543, // Project execution
+      1645017543, // B2C
       8921495991, // Sales Pipeline BESS
       8720615243, // Sandelis
+      183214238, // single project
+      2177969450 //B2B
       // 🔥 Add more board IDs here!
     ];
 
