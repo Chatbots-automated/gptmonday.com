@@ -31,47 +31,37 @@ export default async function handler(req, res) {
 
     let allResults = [];
 
-    // Step 2: Search each board properly using variables
+    // Step 2: Fetch all items normally
     for (const board of boards) {
-      const searchQuery = `
-        query SearchItems($boardId: [ID!], $searchText: [String!]) {
-          boards(ids: $boardId) {
-            items_page(query_params: {
-              rules: [{
-                column_id: "name",
-                compare_value: $searchText,
-                operator: contains_text
-              }]
-            }) {
-              items {
-                id
-                name
-              }
-            }
-          }
-        }
-      `;
-
-      const searchResponse = await fetch('https://api.monday.com/v2', {
+      const itemsResponse = await fetch('https://api.monday.com/v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': apiKey
         },
         body: JSON.stringify({
-          query: searchQuery,
-          variables: {
-            boardId: board.id,
-            searchText: [query]
-          }
+          query: `
+            query {
+              boards(ids: ${board.id}) {
+                items {
+                  id
+                  name
+                }
+              }
+            }
+          `
         })
       });
 
-      const searchData = await searchResponse.json();
-      const items = searchData.data.boards[0]?.items_page?.items || [];
+      const itemsData = await itemsResponse.json();
+      const items = itemsData.data.boards[0]?.items || [];
 
-      if (items.length > 0) {
-        allResults.push(...items);
+      const matchingItems = items.filter(item =>
+        item.name.toLowerCase().includes(query.toLowerCase())
+      );
+
+      if (matchingItems.length > 0) {
+        allResults.push(...matchingItems);
       }
     }
 
