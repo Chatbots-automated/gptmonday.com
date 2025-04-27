@@ -6,9 +6,8 @@ export const config = {
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
-    // Handle CORS preflight
     res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*'); // Or set your domain
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     return res.status(200).end();
@@ -24,7 +23,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const { query } = req.body;
-  const apiKey = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NzU2NzQxNywiYWFpIjoxMSwidWlkIjo3MDc0NTI3MSwiaWFkIjoiMjAyNS0wMS0xNFQxMDoyOTo0OS4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTc3Njk4NCwicmduIjoidXNlMSJ9.BEj_fvCfaotmbuiYw42tbu1-gBfeLX9uKlYRHPgSaWI';
+  const apiKey = 'your_api_key_here'; // replace with your real key
 
   console.log('Received search query:', query);
 
@@ -48,8 +47,6 @@ export default async function handler(req, res) {
     });
 
     const boardsData = await boardsResponse.json();
-    console.log('Boards data:', JSON.stringify(boardsData, null, 2));
-
     const boards = boardsData.data?.boards || [];
 
     let allResults = [];
@@ -71,6 +68,11 @@ export default async function handler(req, res) {
                   items {
                     id
                     name
+                    column_values {
+                      id
+                      title
+                      text
+                    }
                   }
                 }
               }
@@ -80,15 +82,15 @@ export default async function handler(req, res) {
       });
 
       const itemsData = await itemsResponse.json();
-      console.log(`Items on board ${board.name}:`, JSON.stringify(itemsData, null, 2));
-
       const items = itemsData.data?.boards[0]?.items_page?.items || [];
 
-      const matchingItems = items.filter(item =>
-        item.name?.toLowerCase().includes(query.toLowerCase())
-      );
-
-      console.log(`Found ${matchingItems.length} matching items on board ${board.name}`);
+      const matchingItems = items.filter(item => {
+        const nameMatch = item.name?.toLowerCase().includes(query.toLowerCase());
+        const columnMatch = item.column_values?.some(col => {
+          return col.text && col.text.toLowerCase().includes(query.toLowerCase());
+        });
+        return nameMatch || columnMatch;
+      });
 
       if (matchingItems.length > 0) {
         allResults.push(...matchingItems);
