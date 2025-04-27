@@ -23,12 +23,14 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const { query } = req.body;
-  const apiKey = 'your_api_key_here'; // Replace
+  const apiKey = 'your-api-key-here'; // make sure it's correct!
 
   console.log('Received search query:', query);
 
   try {
-    const boardsResponse = await fetch('https://api.monday.com/v2', {
+    const boardId = 1645017543; // Project execution
+
+    const itemsResponse = await fetch('https://api.monday.com/v2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -37,71 +39,38 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         query: `
           query {
-            boards {
-              id
-              name
+            boards(ids: ${boardId}) {
+              items_page(limit: 500) {
+                items {
+                  id
+                  name
+                  column_values {
+                    id
+                    title
+                    text
+                  }
+                }
+              }
             }
           }
         `
       })
     });
 
-    const boardsData = await boardsResponse.json();
-    const boards = boardsData.data?.boards || [];
+    const itemsData = await itemsResponse.json();
+    console.log('Items Data:', JSON.stringify(itemsData, null, 2));
 
-    let allResults = [];
+    const items = itemsData.data?.boards[0]?.items_page?.items || [];
 
-    for (const board of boards) {
-      console.log(`Searching board: ${board.name} (ID: ${board.id})`);
+    const matchingItems = items.filter(item =>
+      item.name.toLowerCase().includes(query.toLowerCase())
+    );
 
-      const itemsResponse = await fetch('https://api.monday.com/v2', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': apiKey
-        },
-        body: JSON.stringify({
-          query: `
-            query {
-              boards(ids: ${board.id}) {
-                items_page(limit: 500) {
-                  items {
-                    id
-                    name
-                    column_values {
-                      id
-                      title
-                      text
-                    }
-                  }
-                }
-              }
-            }
-          `
-        })
-      });
+    console.log(`Found ${matchingItems.length} matching items`);
 
-      const itemsData = await itemsResponse.json();
-      const items = itemsData.data?.boards[0]?.items_page?.items || [];
-
-      const matchingItems = items.filter(item => {
-        const nameMatch = item.name?.toLowerCase().includes(query.toLowerCase());
-        const columnMatch = item.column_values?.some(col => col.text && col.text.toLowerCase().includes(query.toLowerCase()));
-        return nameMatch || columnMatch;
-      });
-
-      console.log(`Found ${matchingItems.length} matching items on board ${board.name}`);
-
-      if (matchingItems.length > 0) {
-        allResults.push(...matchingItems);
-      }
-    }
-
-    console.log('Total matches found:', allResults.length);
-
-    res.status(200).json({ results: allResults });
+    res.status(200).json({ results: matchingItems });
   } catch (err) {
     console.error('Error:', err);
-    res.status(500).json({ error: 'Failed to search Monday.com boards' });
+    res.status(500).json({ error: 'Failed to search Monday.com board' });
   }
 }
