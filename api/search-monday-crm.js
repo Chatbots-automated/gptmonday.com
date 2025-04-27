@@ -59,7 +59,7 @@ export default async function handler(req, res) {
       });
 
       const searchData = await searchResponse.json();
-      if (searchData.data.items_by_column_values.length > 0) {
+      if (searchData.data && searchData.data.items_by_column_values.length > 0) {
         allResults.push(...searchData.data.items_by_column_values);
       }
     }
