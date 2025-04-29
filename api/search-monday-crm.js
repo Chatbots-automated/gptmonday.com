@@ -81,9 +81,9 @@ export default async function handler(req, res) {
           return {
             id: item.id,
             name: item.name,
-            email: getColumn('mirror95'),       // 📨 email column id
-            phone: getColumn('mirror76'),       // 📞 phone column id
-            address: getColumn('mirror49')    // 🏠 address column id
+            email: getColumn('dup__of_email8'),       // 📨 email column id
+            phone: getColumn('phone9'),       // 📞 phone column id
+            address: getColumn('miestas0')    // 🏠 address column id
           };
         })
       );
