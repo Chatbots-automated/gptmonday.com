@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const { query } = req.body;
-  const apiKey = 'your-monday-api-key-here'; // 🔥 don't expose this in frontend if possible
+  const apiKey = 'your-monday-api-key-here'; // 🔥
 
   try {
     const boardIds = [
@@ -53,6 +53,7 @@ export default async function handler(req, res) {
                     name
                     column_values {
                       id
+                      title
                       text
                     }
                   }
@@ -66,6 +67,14 @@ export default async function handler(req, res) {
       const itemsData = await itemsResponse.json();
       const items = itemsData.data?.boards[0]?.items_page?.items || [];
 
+      // 🪵 Debug: Show columns to console
+      items.forEach(item => {
+        console.log(`Item: ${item.name}`);
+        item.column_values.forEach(col => {
+          console.log(`  ${col.id} (${col.title}): ${col.text}`);
+        });
+      });
+
       const matchingItems = items.filter((item) => {
         const nameMatch = item.name?.toLowerCase().includes(query.toLowerCase());
         const columnMatch = item.column_values?.some((col) =>
@@ -76,14 +85,20 @@ export default async function handler(req, res) {
 
       allResults.push(
         ...matchingItems.map(item => {
-          const getColumn = (colId) => item.column_values.find(c => c.id === colId)?.text || '';
+          const getColumn = (ids) => {
+            for (const id of ids) {
+              const match = item.column_values.find(c => c.id === id);
+              if (match?.text) return match.text;
+            }
+            return '';
+          };
 
           return {
             id: item.id,
             name: item.name,
-            email: getColumn('dup__of_email8'),       // 📨 email column id
-            phone: getColumn('phone9'),       // 📞 phone column id
-            address: getColumn('miestas0')    // 🏠 address column id
+            email: getColumn(['dup__of_email8', 'email1']), // ✅ fallback safe
+            phone: getColumn(['phone9', 'phone3']),
+            address: getColumn(['miestas0', 'address7'])
           };
         })
       );
