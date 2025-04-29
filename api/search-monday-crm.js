@@ -23,24 +23,20 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const { query } = req.body;
-  const apiKey = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NzU2NzQxNywiYWFpIjoxMSwidWlkIjo3MDc0NTI3MSwiaWFkIjoiMjAyNS0wMS0xNFQxMDoyOTo0OS4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTc3Njk4NCwicmduIjoidXNlMSJ9.BEj_fvCfaotmbuiYw42tbu1-gBfeLX9uKlYRHPgSaWI';
-
-  console.log('Received search query:', query);
+  const apiKey = 'your-monday-api-key-here'; // 🔥 don't expose this in frontend if possible
 
   try {
     const boardIds = [
-      1645017543, // B2C
-      8921495991, // Sales Pipeline BESS
-      8720615243, // Sandelis
-      183214238,  // Single project
-      2177969450  // B2B
+      1645017543,
+      8921495991,
+      8720615243,
+      183214238,
+      2177969450
     ];
 
     let allResults = [];
 
     for (const boardId of boardIds) {
-      console.log(`Searching board: ${boardId}`);
-
       const itemsResponse = await fetch('https://api.monday.com/v2', {
         method: 'POST',
         headers: {
@@ -58,7 +54,6 @@ export default async function handler(req, res) {
                     column_values {
                       id
                       text
-                      value
                     }
                   }
                 }
@@ -69,8 +64,6 @@ export default async function handler(req, res) {
       });
 
       const itemsData = await itemsResponse.json();
-      console.log(`Items Data from board ${boardId}:`, JSON.stringify(itemsData, null, 2));
-
       const items = itemsData.data?.boards[0]?.items_page?.items || [];
 
       const matchingItems = items.filter((item) => {
@@ -81,20 +74,24 @@ export default async function handler(req, res) {
         return nameMatch || columnMatch;
       });
 
-      console.log(`Found ${matchingItems.length} matches in board ${boardId}`);
-
       allResults.push(
-        ...matchingItems.map(item => ({
-          id: item.id,
-          name: item.name
-        }))
+        ...matchingItems.map(item => {
+          const getColumn = (colId) => item.column_values.find(c => c.id === colId)?.text || '';
+
+          return {
+            id: item.id,
+            name: item.name,
+            email: getColumn('mirror95'),       // 📨 email column id
+            phone: getColumn('mirror76'),       // 📞 phone column id
+            address: getColumn('mirror49')    // 🏠 address column id
+          };
+        })
       );
     }
 
-    console.log(`Total matches found: ${allResults.length}`);
     res.status(200).json({ results: allResults });
   } catch (err) {
     console.error('Error:', err);
-    res.status(200).json({ results: [] }); // <<< IMPORTANT for GPT
+    res.status(200).json({ results: [] });
   }
 }
