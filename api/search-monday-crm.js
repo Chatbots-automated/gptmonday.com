@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   const apiKey = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NzU2NzQxNywiYWFpIjoxMSwidWlkIjo3MDc0NTI3MSwiaWFkIjoiMjAyNS0wMS0xNFQxMDoyOTo0OS4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTc3Njk4NCwicmduIjoidXNlMSJ9.BEj_fvCfaotmbuiYw42tbu1-gBfeLX9uKlYRHPgSaWI'; // replace this 🔥
 
   try {
-    const boardId = 1645017543; // only 1 board
+    const boardId = 183214238; // only 1 board
 
     let allResults = [];
 
@@ -78,9 +78,9 @@ export default async function handler(req, res) {
         return {
           id: item.id,
           name: item.name,
-          email: getColumn('dup__of_email8'),       // 📨 email column id
-          phone: getColumn('phone9'),               // 📞 phone column id
-          address: getColumn('miestas0')            // 🏠 address column id
+          email: getColumn('mirror95'),       // 📨 email column id
+          phone: getColumn('mirror76'),               // 📞 phone column id
+          address: getColumn('mirror49')            // 🏠 address column id
         };
       })
     );
