@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const { query } = req.body;
-  const apiKey = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NzU2NzQxNywiYWFpIjoxMSwidWlkIjo3MDc0NTI3MSwiaWFkIjoiMjAyNS0wMS0xNFQxMDoyOTo0OS4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTc3Njk4NCwicmduIjoidXNlMSJ9.BEj_fvCfaotmbuiYw42tbu1-gBfeLX9uKlYRHPgSaWI'; // replace with yours
+  const apiKey = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NzU2NzQxNywiYWFpIjoxMSwidWlkIjo3MDc0NTI3MSwiaWFkIjoiMjAyNS0wMS0xNFQxMDoyOTo0OS4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTc3Njk4NCwicmduIjoidXNlMSJ9.BEj_fvCfaotmbuiYw42tbu1-gBfeLX9uKlYRHPgSaWI'; // 🔥 Never expose in frontend
 
   try {
     const boardId = 183214238;
@@ -56,18 +56,19 @@ export default async function handler(req, res) {
       body: JSON.stringify({ query: graphqlQuery }),
     });
 
-    const json = await response.json();
-    console.log(`Raw data from Monday:`, JSON.stringify(json, null, 2));
+    const data = await response.json();
+    console.log('Raw data from Monday:', JSON.stringify(data, null, 2));
 
-    const items = json.data?.boards?.[0]?.items_page?.items || [];
+    const items = data.data?.boards?.[0]?.items_page?.items || [];
 
     const getColumn = (item, colId) =>
       item.column_values.find(c => c.id === colId)?.display_value || '';
 
     const matches = items.filter(item => {
-      const nameMatch = item.name?.toLowerCase().includes(query.toLowerCase());
+      const lowerQuery = query.toLowerCase();
+      const nameMatch = item.name?.toLowerCase().includes(lowerQuery);
       const columnMatch = item.column_values?.some(col =>
-        col.display_value?.toLowerCase().includes(query.toLowerCase())
+        col.display_value?.toLowerCase().includes(lowerQuery)
       );
       return nameMatch || columnMatch;
     });
@@ -77,7 +78,7 @@ export default async function handler(req, res) {
       name: item.name,
       email: getColumn(item, 'mirror95'),
       phone: getColumn(item, 'mirror76'),
-      address: getColumn(item, 'mirror49')
+      address: getColumn(item, 'mirror49'),
     }));
 
     res.status(200).json({ results });
