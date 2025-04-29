@@ -23,23 +23,23 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const { query } = req.body;
-  const apiKey = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NzU2NzQxNywiYWFpIjoxMSwidWlkIjo3MDc0NTI3MSwiaWFkIjoiMjAyNS0wMS0xNFQxMDoyOTo0OS4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTc3Njk4NCwicmduIjoidXNlMSJ9.BEj_fvCfaotmbuiYw42tbu1-gBfeLX9uKlYRHPgSaWI'; // 🔥 replace with your real key
+  const apiKey = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NzU2NzQxNywiYWFpIjoxMSwidWlkIjo3MDc0NTI3MSwiaWFkIjoiMjAyNS0wMS0xNFQxMDoyOTo0OS4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTc3Njk4NCwicmduIjoidXNlMSJ9.BEj_fvCfaotmbuiYw42tbu1-gBfeLX9uKlYRHPgSaWI'; // 🔥 Replace this
 
   const boardConfigs = [
     {
-      id: 1645436514, // Single project
+      id: 1645436514, // Single Project
       columns: { email: 'mirror95', phone: 'mirror76', address: 'mirror49' },
-      type: 'mirror',
+      boardName: 'Single Project',
     },
     {
       id: 2177969450, // Sales Pipeline B2C
       columns: { email: 'dup__of_email8', phone: 'phone9', address: 'miestas0' },
-      type: 'normal',
+      boardName: 'Sales Pipeline B2C',
     },
     {
       id: 1645017543, // Sales Pipeline B2B
       columns: { email: 'dup__of_email8', phone: 'mirror0', address: 'location2' },
-      type: 'mixed', // normal + mirror
+      boardName: 'Sales Pipeline B2B',
     },
   ];
 
@@ -71,21 +71,19 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: apiKey,
+          'Authorization': apiKey,
         },
         body: JSON.stringify({ query: graphqlQuery }),
       });
 
       const data = await response.json();
-      console.log('Raw data from Monday (board ' + board.id + '):', JSON.stringify(data, null, 2));
+      console.log(`Raw data from Monday (board ${board.id}):`, JSON.stringify(data, null, 2));
 
       const items = data.data?.boards?.[0]?.items_page?.items || [];
 
       const getColumn = (item, colId) => {
         const col = item.column_values.find(c => c.id === colId);
         if (!col) return '';
-
-        // Handle based on available fields
         if (col.display_value) return col.display_value;
         if (col.text) return col.text;
         return '';
@@ -108,6 +106,7 @@ export default async function handler(req, res) {
           email: getColumn(item, board.columns.email),
           phone: getColumn(item, board.columns.phone),
           address: getColumn(item, board.columns.address),
+          board: board.boardName, // 🔥 Add from which board
         }))
       );
     }
