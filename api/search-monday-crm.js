@@ -23,73 +23,66 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const { query } = req.body;
-  const apiKey = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NzU2NzQxNywiYWFpIjoxMSwidWlkIjo3MDc0NTI3MSwiaWFkIjoiMjAyNS0wMS0xNFQxMDoyOTo0OS4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTc3Njk4NCwicmduIjoidXNlMSJ9.BEj_fvCfaotmbuiYw42tbu1-gBfeLX9uKlYRHPgSaWI'; // replace this 🔥
+  const apiKey = 'your-api-key'; // replace with yours
 
   try {
-    const boardId = 183214238; // only 1 board
+    const boardId = 183214238;
 
-    let allResults = [];
+    const graphqlQuery = `
+      query {
+        boards(ids: ${boardId}) {
+          items_page(limit: 500) {
+            items {
+              id
+              name
+              column_values {
+                id
+                ... on MirrorValue {
+                  display_value
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
 
-    console.log(`Searching board: ${boardId} for query: "${query}"`);
-
-    const itemsResponse = await fetch('https://api.monday.com/v2', {
+    const response = await fetch('https://api.monday.com/v2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': apiKey,
       },
-      body: JSON.stringify({
-        query: `
-          query {
-            boards(ids: ${boardId}) {
-              items_page(limit: 500) {
-                items {
-                  id
-                  name
-                  column_values {
-                    id
-                    text
-                  }
-                }
-              }
-            }
-          }
-        `,
-      }),
+      body: JSON.stringify({ query: graphqlQuery }),
     });
 
-    const itemsData = await itemsResponse.json();
-    console.log(`Raw data from Monday:`, JSON.stringify(itemsData, null, 2)); // << log the FULL data
+    const json = await response.json();
+    console.log(`Raw data from Monday:`, JSON.stringify(json, null, 2));
 
-    const items = itemsData.data?.boards[0]?.items_page?.items || [];
+    const items = json.data?.boards?.[0]?.items_page?.items || [];
 
-    const matchingItems = items.filter((item) => {
+    const getColumn = (item, colId) =>
+      item.column_values.find(c => c.id === colId)?.display_value || '';
+
+    const matches = items.filter(item => {
       const nameMatch = item.name?.toLowerCase().includes(query.toLowerCase());
-      const columnMatch = item.column_values?.some((col) =>
-        col.text?.toLowerCase().includes(query.toLowerCase())
+      const columnMatch = item.column_values?.some(col =>
+        col.display_value?.toLowerCase().includes(query.toLowerCase())
       );
       return nameMatch || columnMatch;
     });
 
-    allResults.push(
-      ...matchingItems.map(item => {
-        const getColumn = (colId) => item.column_values.find(c => c.id === colId)?.text || '';
+    const results = matches.map(item => ({
+      id: item.id,
+      name: item.name,
+      email: getColumn(item, 'mirror95'),
+      phone: getColumn(item, 'mirror76'),
+      address: getColumn(item, 'mirror49')
+    }));
 
-        return {
-          id: item.id,
-          name: item.name,
-          email: getColumn('mirror95'),       // 📨 email column id
-          phone: getColumn('mirror76'),               // 📞 phone column id
-          address: getColumn('mirror49')            // 🏠 address column id
-        };
-      })
-    );
-
-    console.log(`Found ${allResults.length} matching items`);
-
-    res.status(200).json({ results: allResults });
-  } catch (err) {
-    console.error('Error:', err);
-    res.status(200).json({ results: [] }); // important: still return valid response
+    res.status(200).json({ results });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(200).json({ results: [] });
   }
 }
